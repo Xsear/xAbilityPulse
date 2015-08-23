@@ -21,9 +21,9 @@ require "lib/lib_InterfaceOptions"
 
 AddonInfo = {
     release  = "2015-08-23",
-    version = "1.2",
+    version = "1.3",
     patch = "1.3.1334 (pts)",
-    save = 1.0,
+    save = 1,
 }
 
 OUTPUT_PREFIX = "[xAP] "
@@ -109,7 +109,7 @@ function OnOptionChanged(id, value)
 end
 
 do
-    InterfaceOptions.SaveVersion(1)
+    InterfaceOptions.SaveVersion(AddonInfo.save)
 
     InterfaceOptions.AddCheckBox({id = "Enabled", label = "Enable addon", default = g_Options.Enabled})
     InterfaceOptions.AddCheckBox({id = "Debug", label = "Enable debug", default = g_Options.Debug})

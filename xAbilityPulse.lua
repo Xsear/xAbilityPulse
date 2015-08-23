@@ -366,7 +366,7 @@ end
 
 function TestPulse()
     -- Pick ability "randomly"
-    local abilityKey = nil
+    local abilityKey = g_Abilities[1]
     for key, abilityData in pairs(g_Abilities) do
         if math.random(1,10) % 2 == 0 then
             abilityKey = key

@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Component
+    xmlns="http://www.red5studios.com/" 
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+    xsi:schemaLocation="http://www.red5studios.com/ ../../../schemas/component.xsd"
+    >
+    <Info
+        title="xAbilityPulse"
+        author="Xsear"
+        description="Pulse an ability's icon in the center of the screen when it comes off cooldown."
+        url=""
+        uiVersion="1000"
+    />
+
+    <Events>
+        <!-- Firefall -->
+        <Event name="ON_COMPONENT_LOAD"            bind="OnComponentLoad"     />
+        <Event name="ON_PLAYER_READY"              bind="OnPlayerReady"       />
+        <Event name="ON_ABILITY_USED"              bind="OnAbilityUsed"       />
+        <Event name="ON_ABILITY_READY"             bind="OnAbilityReady"      />
+        <Event name="ON_BATTLEFRAME_CHANGED"         bind="OnBattleframeChanged"  />
+    </Events>
+
+    <Frames>
+        <HUDFrame name="IconFrame" dimensions="center-x:50%; center-y:50%; width:25%; height:25%" visible="true" depth="0">
+            <Children>
+                <!--<StillArt name="Background" dimensions="dock:fill" style="texture:colors; region:white; tint:#000000; alpha:0.3;"/>-->
+                <Icon id="Icon" dimensions="center-x:50%; height:100%; aspect:1.0;" style="fixed-bounds:true; alpha:1;" />
+            </Children>
+        </HUDFrame>
+    </Frames>
+
+</Component>

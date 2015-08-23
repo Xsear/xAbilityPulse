@@ -101,6 +101,7 @@ g_Options.ScaleSize = 25
 function OnOptionChanged(id, value)
 
     if id == "Debug" then
+        Component.SaveSetting("Debug", value)
         Debug.EnableLogging(value)
     elseif id == "Enabled" then
         -- Nothing that I care to do
@@ -125,7 +126,7 @@ end
 -- ------------------------------------------å
 
 function OnComponentLoad()
-    Debug.EnableLogging(Component.GetSetting('Debug'))
+    Debug.EnableLogging(Component.GetSetting("Debug"))
     InterfaceOptions.SetCallbackFunc(OnOptionChanged)
     LIB_SLASH.BindCallback({slash_list=c_SlashList, func=OnSlash})
 end

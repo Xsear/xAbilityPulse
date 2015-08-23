@@ -1,7 +1,5 @@
 # xAbilityPulse
-A Firefall addon that flashes the icon of an ability whenever it comes back off cooldown.
-
-Supports abilities with charges as well.
+A Firefall addon that briefly overlays the icon of an ability in the center of the screen whenever it comes back off cooldown, including abilities with charges.
 
 ##Interface Options
 | Option  | Description |

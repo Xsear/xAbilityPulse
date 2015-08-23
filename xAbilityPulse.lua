@@ -97,6 +97,8 @@ g_Options = {}
 g_Options.Enabled = true
 g_Options.Debug = false
 g_Options.ScaleSize = 25
+g_Options.MonitorMedical = true
+g_Options.MonitorAuxiliary = true
 
 function OnOptionChanged(id, value)
 
@@ -107,6 +109,8 @@ function OnOptionChanged(id, value)
         -- Nothing that I care to do
     elseif id == "ScaleSize" then
         SetIconScale(value)
+    elseif id == "MonitorMedical" or "MonitorAuxiliary" then
+        UpdateExtraMonitors()
     end
     
     g_Options[id] = value
@@ -117,6 +121,8 @@ do
 
     InterfaceOptions.AddCheckBox({id = "Enabled", label = "Enable addon", default = g_Options.Enabled})
     InterfaceOptions.AddCheckBox({id = "Debug", label = "Enable debug", default = g_Options.Debug})
+    InterfaceOptions.AddCheckBox({id = "MonitorMedical", label = "Pulse for medical system cooldown", default = g_Options.MonitorMedical})
+    InterfaceOptions.AddCheckBox({id = "MonitorAuxiliary", label = "Pulse for auxiliary weapon cooldown", default = g_Options.MonitorAuxiliary})
     InterfaceOptions.AddSlider({id = "ScaleSize", label = "Icon size scale", default = g_Options.ScaleSize, min = 5, max = 200, inc = 5, suffix = "%"})
 end
 
@@ -327,6 +333,12 @@ function UpdateExtraMonitors(args)
     g_CB2_AuxiliaryWeaponCooldown:Cancel()
 
     -- Clear existing data
+    if g_Extra.medicalData and IsOnCooldown(g_Extra.medicalData.abilityId) then
+        WipeCooldown(g_Extra.medicalData.abilityId)
+    end
+    if g_Extra.auxiliaryData and IsOnCooldown(g_Extra.auxiliaryData.abilityId) then
+        WipeCooldown(g_Extra.auxiliaryData.abilityId)
+    end
     g_Extra = {}
 
     -- Get current medical and auxiliary abilities
@@ -392,11 +404,11 @@ function ExtraMonitor(args)
     if args and args.id then
         local abilityId = tostring(args.id)
 
-        if abilityId == g_Extra.medicalData.abilityId then
+        if g_Options.MonitorMedical and abilityId == g_Extra.medicalData.abilityId then
             Debug.Log("Detected Medical System Used, adding cooldown")
             AddCooldown(abilityId)
 
-        elseif abilityId == g_Extra.auxiliaryData.abilityId then
+        elseif g_Options.MonitorAuxiliary and abilityId == g_Extra.auxiliaryData.abilityId then
             Debug.Log("Detected Auxiliary Weapon Used, adding cooldown")
             AddCooldown(abilityId)
         end
@@ -406,12 +418,12 @@ function ExtraMonitor(args)
     local medcd = medstate.requirements.remainingCooldown
 
     if medcd then
-        Debug.Log("Right, your med sysetm has a cooldown, let me setup the callback for you :D")
+        Debug.Log("Right, your med system has a cooldown, let me setup the callback for you :D")
         g_CB2_MedicalSystemCooldown:Cancel()
         g_CB2_MedicalSystemCooldown:Schedule(medcd)
     end
 
-    if IsOnCooldown(g_Extra.medicalData.abilityId) and not(medcd and medcd > 0.1) then
+    if g_Options.MonitorMedical and IsOnCooldown(g_Extra.medicalData.abilityId) and not(medcd and medcd > 0.1) then
         Debug.Log("Your med system is ready! :D Poppin cooldown")
         PopCooldown(g_Extra.medicalData.abilityId)
     end
@@ -426,7 +438,7 @@ function ExtraMonitor(args)
         g_CB2_AuxiliaryWeaponCooldown:Schedule(auxcd)
     end
 
-    if IsOnCooldown(g_Extra.auxiliaryData.abilityId) and not(auxcd and auxcd > 0) then
+    if g_Options.MonitorAuxiliary and IsOnCooldown(g_Extra.auxiliaryData.abilityId) and not(auxcd and auxcd > 0) then
         Debug.Log("Chief, your aux is back in business! Poppin cooldown")
         PopCooldown(g_Extra.auxiliaryData.abilityId)
     end
@@ -472,6 +484,13 @@ function PopCooldown(abilityId)
 
     else
         Debug.Error("PopCooldown on non-existent cooldown :(")
+    end
+end
+
+function WipeCooldown(abilityId)
+    Debug.Log("WipeCooldown", abilityId)
+    if g_ActiveCooldowns[abilityId] then
+       g_ActiveCooldowns[abilityId] = nil
     end
 end
 

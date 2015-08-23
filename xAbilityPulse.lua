@@ -21,7 +21,7 @@ require "lib/lib_InterfaceOptions"
 
 AddonInfo = {
     release  = "2015-08-23",
-    version = "1.1",
+    version = "1.2",
     patch = "1.3.1334 (pts)",
     save = 1.0,
 }
@@ -210,19 +210,26 @@ end
 
 function OnAbilityReady(args)
     if g_Options.Enabled then
-        local abilityId = tostring(args.id) or 0 -- Ensure not userdata
+        local abilityId = tostring(args.id) -- Ensure not userdata
+        if not g_Abilities[abilityId] then return end
         local isReady = args.ready or false
         local hasJustComeOffCooldown = args.elapsed_cooldown ~= nil and args.elapsed_cooldown > 1
         --Debug.Table("Player.GetAbilityState(abilityId)", Player.GetAbilityState(abilityId))
             
 
+        -- If ready get more advanced data
         if isReady then 
+            local abilityState = Player.GetAbilityState(abilityId)
+            Debug.Table("OnAbilityReady for ".. abilityId .. " (" .. g_Abilities[abilityId].name .. ") with abilityState", abilityState)
 
-            if g_Temp_UsedAbilityHasCharges_Id[abilityId] then
+            if abilityState.inEffect then
+                Debug.Log("Well, this ability is currently active, so we definitely didnt get this event because it came off cooldown, probably.")
+
+            elseif g_Temp_UsedAbilityHasCharges_Id[abilityId] then
                 Debug.Log("OnAbilityReady finds event that says that ability " .. abilityId .. " (" .. g_Abilities[abilityId].name .. ") has refreshed, but we know it can have charges, so we must check carefully")
 
                 Debug.Log("g_Temp_UsedAbilityHasCharges_Id[abilityId] = ", g_Temp_UsedAbilityHasCharges_Id[abilityId])
-                local abilityState = Player.GetAbilityState(abilityId)
+                
                 Debug.Log("abilityState.requirements.chargeCount = ", abilityState.requirements.chargeCount)
 
                 if abilityState.requirements.chargeCount > g_Temp_UsedAbilityHasCharges_Id[abilityId] then
@@ -237,10 +244,8 @@ function OnAbilityReady(args)
                 else
                     Debug.Log("The number of charges is the same as when we activated, so this is not the time to celebrate a cooldown completion.")
                 end
-                
-                return
         
-            elseif IsOnCooldown(abilityId) then
+            elseif hasJustComeOffCooldown and IsOnCooldown(abilityId) then
                 Debug.Log("OnAbilityReady suggests that ability " .. abilityId .. " (" .. g_Abilities[abilityId].name .. ") has refreshed, and we trust blindly")
                 Debug.Log("hasJustComeOffCooldown: ", tostring(hasJustComeOffCooldown))
                 PopCooldown(abilityId)
@@ -260,7 +265,9 @@ function UpdateAbilities(args)
     -- Clear current data
     g_Abilities = {}
     if next(g_ActiveCooldowns) then
-        Debug.Warn("Losing cooldowns because of updating abilities")
+        if g_Options.Debug then 
+            Output("Losing cooldowns because of updating abilities")
+        end
     end
     g_ActiveCooldowns = {}
 
@@ -316,7 +323,7 @@ end
 
 function TriggerPulse(abilityData)
     -- abilityData = {abilityId = ability.abilityId, iconId = abilityInfo.iconId}
-    if g_Options.Debug then Output("TriggerPulse for abilityId " .. tostring(abilityData.abilityId) .. " ( " .. abilityData.name .. ") with icon " .. tostring(abilityData.iconId)) end
+    if g_Options.Debug then Output("TriggerPulse for abilityId " .. tostring(abilityData.abilityId) .. " (" .. abilityData.name .. ")") end
 
 
     Debug.Table("TriggerPulse", abilityData)

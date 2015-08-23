@@ -264,12 +264,6 @@ function UpdateAbilities(args)
 
     -- Clear current data
     g_Abilities = {}
-    if next(g_ActiveCooldowns) then
-        if g_Options.Debug then 
-            Output("Losing cooldowns because of updating abilities")
-        end
-    end
-    g_ActiveCooldowns = {}
 
     -- Get current abilities
     local abilities = Player.GetAbilities().slotted
@@ -280,6 +274,23 @@ function UpdateAbilities(args)
         local abilityInfo = Player.GetAbilityInfo(ability.abilityId) -- Well if this makes it any faster might as well use it here
         g_Abilities[abilityId] = {name = tostring(abilityInfo.name), abilityId = abilityId, iconId = abilityInfo.iconId}
     end
+
+    -- Try to preserve cooldowns if possible
+    if next(g_ActiveCooldowns) then
+        Debug.Log("Trying to preserve cooldowns")
+        local oldCooldowns = g_ActiveCooldowns
+        Debug.Table("oldCooldowns", oldCooldowns)
+        g_ActiveCooldowns = {}
+        Debug.Table("g_Abilities", g_Abilities)
+        for key, value in pairs(oldCooldowns) do
+            Debug.Log("Lap in oldCooldowns, key ", key, " and value ", value)
+            if g_Abilities[key] then
+                g_ActiveCooldowns[key] = value
+            end
+        end
+        Debug.Table("New g_ActiveCooldowns", g_ActiveCooldowns)
+    end
+
 end
 
 function IsWatchedAbility(abilityId)

@@ -94,6 +94,9 @@ g_Options = {}
 g_Options.Enabled = true
 g_Options.Debug = false
 g_Options.ScaleSize = 25
+g_Options.MaxAlpha = 0.8
+g_Options.FadeInDuration = 0.25
+g_Options.FadeOutDuration = 0.75
 
 function OnOptionChanged(id, value)
 
@@ -114,7 +117,10 @@ do
 
     InterfaceOptions.AddCheckBox({id = "Enabled", label = "Enable addon", default = g_Options.Enabled})
     InterfaceOptions.AddCheckBox({id = "Debug", label = "Enable debug", default = g_Options.Debug})
-    InterfaceOptions.AddSlider({id = "ScaleSize", label = "Icon size scale", default = g_Options.ScaleSize, min = 5, max = 200, inc = 5, suffix = "%"})
+    InterfaceOptions.AddSlider({id = "ScaleSize", label = "Icon size scale", default = g_Options.ScaleSize, min = 0, max = 200, inc = 5, suffix = "%"})
+    InterfaceOptions.AddSlider({id = "MaxAlpha", label = "Icon alpha", default = g_Options.MaxAlpha, min = 0, max = 1, inc = 0.05, multi = 100, suffix = "%"})
+    InterfaceOptions.AddSlider({id = "FadeInDuration", label = "Icon fade in duration", default = g_Options.FadeInDuration, min = 0, max = 2, inc = 0.05, suffix = "s"})
+    InterfaceOptions.AddSlider({id = "FadeOutDuration", label = "Icon fade out duration", default = g_Options.FadeOutDuration, min = 0, max = 2, inc = 0.05, suffix = "s"})
 end
 
 
@@ -354,8 +360,8 @@ function TriggerPulse(abilityData)
     w_ICON:SetIcon(abilityData.iconId)
 
     w_ICON:SetParam("alpha", 0, 0.1)
-    w_ICON:QueueParam("alpha", 0.8, 0.25, "ease-in")
-    w_ICON:QueueParam("alpha", 0, 0.75, "ease-out")
+    w_ICON:QueueParam("alpha", g_Options.MaxAlpha, g_Options.FadeInDuration, "ease-in")
+    w_ICON:QueueParam("alpha", 0, g_Options.FadeOutDuration, "ease-out")
 
     -- Queue Unlock
     Callback2.FireAndForget(function() g_PulseBusy = false Debug.Log("g_PulseBusy now false") end, nil, TRIGGER_UNLOCK_DELAY_SECONDS)

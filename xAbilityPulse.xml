@@ -7,18 +7,19 @@
     <Info
         title="xAbilityPulse"
         author="Xsear"
-        description="Pulse an ability's icon in the center of the screen when it comes off cooldown."
-        url=""
+        description="Briefly overlays the icon of an ability in the center of the screen whenever it comes off cooldown"
+        url="//github.com/Xsear/xAbilityPulse"
         uiVersion="1000"
     />
 
     <Events>
         <!-- Firefall -->
-        <Event name="ON_COMPONENT_LOAD"            bind="OnComponentLoad"     />
-        <Event name="ON_PLAYER_READY"              bind="OnPlayerReady"       />
-        <Event name="ON_ABILITY_USED"              bind="OnAbilityUsed"       />
-        <Event name="ON_ABILITY_READY"             bind="OnAbilityReady"      />
-        <Event name="ON_BATTLEFRAME_CHANGED"         bind="OnBattleframeChanged"  />
+        <Event name="ON_COMPONENT_LOAD"            bind="OnComponentLoad"       />
+        <Event name="ON_PLAYER_READY"              bind="OnPlayerReady"         />
+        <Event name="ON_ABILITY_USED"              bind="OnAbilityUsed"         />
+        <Event name="ON_ABILITY_READY"             bind="OnAbilityReady"        />
+        <Event name="ON_BATTLEFRAME_CHANGED"       bind="OnBattleframeChanged"  />
+
     </Events>
 
     <Frames>

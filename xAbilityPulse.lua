@@ -20,8 +20,8 @@ require "lib/lib_InterfaceOptions"
 -- ------------------------------------------
 
 AddonInfo = {
-    release  = "2015-07-31",
-    version = "1.0",
+    release  = "2015-08-23",
+    version = "1.1",
     patch = "1.3.1334 (pts)",
     save = 1.0,
 }
@@ -40,7 +40,7 @@ w_ICON = Component.GetWidget("Icon")
 
 g_Abilities = {}
 g_ActiveCooldowns = {}
-g_Temp_UsedAbilityHasCharges_Id = nil
+g_Temp_UsedAbilityHasCharges_Id = {}
 g_PulseBusy = false
 
 
@@ -188,13 +188,21 @@ end
 function OnAbilityUsed(args)
     if g_Options.Enabled then
         local abilityId = tostring(args.id) or 0 -- Ensure not userdata
-        local hasCooldown = (args.cooldown > 0) or false
-        Debug.Table("OnAbilityUsed", {abilityId, hasCooldown})
+        local noCooldown = (args.cooldown < 1)
+
+
         if IsWatchedAbility(abilityId) then
-            if not hasCooldown then
-                g_Temp_UsedAbilityHasCharges_Id = abilityId
-                Debug.Log("OnAbilityUsed set g_Temp_UsedAbilityHasCharges_Id to ", g_Temp_UsedAbilityHasCharges_Id)
+            Debug.Table("OnAbilityUsed", {abilityId, noCooldown})
+
+            
+            local abilityState = Player.GetAbilityState(abilityId)
+            Debug.Table("abilityState", abilityState)
+            if abilityState.requirements.chargeCount ~= -1 then
+                Debug.Log("This ability can have charges")
+                g_Temp_UsedAbilityHasCharges_Id[abilityId] = abilityState.requirements.chargeCount
+                Debug.Log("OnAbilityUsed set g_Temp_UsedAbilityHasCharges_Id["..abilityId.." to ", g_Temp_UsedAbilityHasCharges_Id[abilityId], " which is ", g_Abilities[abilityId].name)
             end
+
             AddCooldown(abilityId)
         end
     end
@@ -204,13 +212,39 @@ function OnAbilityReady(args)
     if g_Options.Enabled then
         local abilityId = tostring(args.id) or 0 -- Ensure not userdata
         local isReady = args.ready or false
-        if g_Temp_UsedAbilityHasCharges_Id == abilityId then
-            g_Temp_UsedAbilityHasCharges_Id = nil
-            Debug.Log("OnAbilityReady clears g_Temp_UsedAbilityHasCharges_Id and returns")
-            return
-        end
-        if isReady and IsOnCooldown(abilityId) then
-            PopCooldown(abilityId)
+        local hasJustComeOffCooldown = args.elapsed_cooldown ~= nil and args.elapsed_cooldown > 1
+        --Debug.Table("Player.GetAbilityState(abilityId)", Player.GetAbilityState(abilityId))
+            
+
+        if isReady then 
+
+            if g_Temp_UsedAbilityHasCharges_Id[abilityId] then
+                Debug.Log("OnAbilityReady finds event that says that ability " .. abilityId .. " (" .. g_Abilities[abilityId].name .. ") has refreshed, but we know it can have charges, so we must check carefully")
+
+                Debug.Log("g_Temp_UsedAbilityHasCharges_Id[abilityId] = ", g_Temp_UsedAbilityHasCharges_Id[abilityId])
+                local abilityState = Player.GetAbilityState(abilityId)
+                Debug.Log("abilityState.requirements.chargeCount = ", abilityState.requirements.chargeCount)
+
+                if abilityState.requirements.chargeCount > g_Temp_UsedAbilityHasCharges_Id[abilityId] then
+                    Debug.Log("There are more charges now than we have stored, so this looks like a legit cooldown refresh!")
+                    PopCooldown(abilityId)
+                    Debug.Log("Updating known charges")
+                    g_Temp_UsedAbilityHasCharges_Id[abilityId] = abilityState.requirements.chargeCount
+                    Debug.Log("g_Temp_UsedAbilityHasCharges_Id[abilityId]", g_Temp_UsedAbilityHasCharges_Id[abilityId])
+
+                elseif abilityState.requirements.chargeCount < g_Temp_UsedAbilityHasCharges_Id[abilityId] then
+                    Debug.Log("There are less charges now than we had when we activated the ability, not sure what that means, but it definitely does not mean we should pop anything")
+                else
+                    Debug.Log("The number of charges is the same as when we activated, so this is not the time to celebrate a cooldown completion.")
+                end
+                
+                return
+        
+            elseif IsOnCooldown(abilityId) then
+                Debug.Log("OnAbilityReady suggests that ability " .. abilityId .. " (" .. g_Abilities[abilityId].name .. ") has refreshed, and we trust blindly")
+                Debug.Log("hasJustComeOffCooldown: ", tostring(hasJustComeOffCooldown))
+                PopCooldown(abilityId)
+            end
         end
     end
 end
@@ -237,7 +271,7 @@ function UpdateAbilities(args)
     for _, ability in ipairs(abilities) do
         local abilityId = tostring(ability.abilityId) -- Ensure not userdata
         local abilityInfo = Player.GetAbilityInfo(ability.abilityId) -- Well if this makes it any faster might as well use it here
-        g_Abilities[abilityId] = {abilityId = abilityId, iconId = abilityInfo.iconId}
+        g_Abilities[abilityId] = {name = tostring(abilityInfo.name), abilityId = abilityId, iconId = abilityInfo.iconId}
     end
 end
 
@@ -266,13 +300,15 @@ function PopCooldown(abilityId)
         
     if g_ActiveCooldowns[abilityId] then
 
+        TriggerPulse(abilityData)
+
         if g_ActiveCooldowns[abilityId].count > 1 then
             g_ActiveCooldowns[abilityId].count = g_ActiveCooldowns[abilityId].count - 1
+            Debug.Log("Decremented stack count to ", g_ActiveCooldowns[abilityId].count)
         else
             g_ActiveCooldowns[abilityId] = nil
         end
 
-        TriggerPulse(abilityData)
     else
         Debug.Error("PopCooldown on non-existent cooldown :(")
     end
@@ -280,7 +316,7 @@ end
 
 function TriggerPulse(abilityData)
     -- abilityData = {abilityId = ability.abilityId, iconId = abilityInfo.iconId}
-    --Output("TriggerPulse for abilityId " .. tostring(abilityData.abilityId) .. " with icon " .. tostring(abilityData.iconId))
+    if g_Options.Debug then Output("TriggerPulse for abilityId " .. tostring(abilityData.abilityId) .. " ( " .. abilityData.name .. ") with icon " .. tostring(abilityData.iconId)) end
 
 
     Debug.Table("TriggerPulse", abilityData)

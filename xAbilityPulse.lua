@@ -218,9 +218,10 @@ function OnAbilityReady(args)
             
 
         -- If ready get more advanced data
-        if isReady then 
+        if isReady and IsOnCooldown(abilityId) then 
             local abilityState = Player.GetAbilityState(abilityId)
             Debug.Table("OnAbilityReady for ".. abilityId .. " (" .. g_Abilities[abilityId].name .. ") with abilityState", abilityState)
+            Debug.Log("hasJustComeOffCooldown: ", tostring(hasJustComeOffCooldown))
 
             if abilityState.inEffect then
                 Debug.Log("Well, this ability is currently active, so we definitely didnt get this event because it came off cooldown, probably.")
@@ -245,9 +246,8 @@ function OnAbilityReady(args)
                     Debug.Log("The number of charges is the same as when we activated, so this is not the time to celebrate a cooldown completion.")
                 end
         
-            elseif hasJustComeOffCooldown and IsOnCooldown(abilityId) then
+            elseif hasJustComeOffCooldown then
                 Debug.Log("OnAbilityReady suggests that ability " .. abilityId .. " (" .. g_Abilities[abilityId].name .. ") has refreshed, and we trust blindly")
-                Debug.Log("hasJustComeOffCooldown: ", tostring(hasJustComeOffCooldown))
                 PopCooldown(abilityId)
             end
         end

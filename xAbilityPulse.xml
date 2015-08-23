@@ -7,8 +7,8 @@
     <Info
         title="xAbilityPulse"
         author="Xsear"
-        description="Pulse an ability's icon in the center of the screen when it comes off cooldown."
-        url=""
+        description="Briefly overlays the icon of an ability in the center of the screen whenever it comes off cooldown"
+        url="//github.com/Xsear/xAbilityPulse"
         uiVersion="1000"
     />
 

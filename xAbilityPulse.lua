@@ -122,7 +122,7 @@ end
 -- ------------------------------------------å
 
 function OnComponentLoad()
-    Debug.EnableLogging(g_Debug)
+    Debug.EnableLogging(Component.GetSetting('Debug'))
     InterfaceOptions.SetCallbackFunc(OnOptionChanged)
     LIB_SLASH.BindCallback({slash_list=c_SlashList, func=OnSlash})
 end

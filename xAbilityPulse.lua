@@ -21,7 +21,7 @@ require "lib/lib_InterfaceOptions"
 
 AddonInfo = {
     release  = "2015-08-23",
-    version = "1.3",
+    version = "1.4",
     patch = "1.3.1334 (pts)",
     save = 1,
 }

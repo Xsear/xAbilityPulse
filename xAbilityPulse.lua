@@ -42,6 +42,9 @@ g_Abilities = {}
 g_ActiveCooldowns = {}
 g_Temp_UsedAbilityHasCharges_Id = {}
 g_PulseBusy = false
+g_CB2_MedicalSystemCooldown = nil
+g_CB2_AuxiliaryWeaponCooldown = nil
+g_Extra = {}
 
 
 -- ------------------------------------------
@@ -142,6 +145,7 @@ function OnSlash(args)
         Debug.Divider()
         Debug.Table("g_Abilities", g_Abilities)
         Debug.Table("g_ActiveCooldowns", g_ActiveCooldowns)
+        Debug.Table("g_Extra", g_Extra)
         Debug.Divider()
     elseif c_SlashTable_Test[slashKey] then
         Output("Test")
@@ -187,24 +191,33 @@ end
 
 function OnAbilityUsed(args)
     if g_Options.Enabled then
-        local abilityId = tostring(args.id) or 0 -- Ensure not userdata
-        local noCooldown = (args.cooldown < 1)
+
+        -- Abilities on the actionbar
+        if args.index ~= -1 then
+            local abilityId = tostring(args.id) or 0 -- Ensure not userdata
+            local noCooldown = (args.cooldown < 1)
 
 
-        if IsWatchedAbility(abilityId) then
-            Debug.Table("OnAbilityUsed", {abilityId, noCooldown})
+            if IsWatchedAbility(abilityId) then
+                Debug.Table("OnAbilityUsed", {abilityId, noCooldown})
 
-            
-            local abilityState = Player.GetAbilityState(abilityId)
-            Debug.Table("abilityState", abilityState)
-            if abilityState.requirements.chargeCount ~= -1 then
-                Debug.Log("This ability can have charges")
-                g_Temp_UsedAbilityHasCharges_Id[abilityId] = abilityState.requirements.chargeCount
-                Debug.Log("OnAbilityUsed set g_Temp_UsedAbilityHasCharges_Id["..abilityId.." to ", g_Temp_UsedAbilityHasCharges_Id[abilityId], " which is ", g_Abilities[abilityId].name)
+                
+                local abilityState = Player.GetAbilityState(abilityId)
+                Debug.Table("abilityState", abilityState)
+                if abilityState.requirements.chargeCount ~= -1 then
+                    Debug.Log("This ability can have charges")
+                    g_Temp_UsedAbilityHasCharges_Id[abilityId] = abilityState.requirements.chargeCount
+                    Debug.Log("OnAbilityUsed set g_Temp_UsedAbilityHasCharges_Id["..abilityId.." to ", g_Temp_UsedAbilityHasCharges_Id[abilityId], " which is ", g_Abilities[abilityId].name)
+                end
+
+                AddCooldown(abilityId)
             end
-
-            AddCooldown(abilityId)
+        
+        -- Abilities outside the actionbar
+        else
+            ExtraMonitor(args)
         end
+
     end
 end
 
@@ -291,7 +304,135 @@ function UpdateAbilities(args)
         Debug.Table("New g_ActiveCooldowns", g_ActiveCooldowns)
     end
 
+    UpdateExtraMonitors(args)
 end
+
+function UpdateExtraMonitors(args)
+
+    Debug.Table("UpdateExtraMonitors", args)
+
+    -- Create monitors if needed
+    if not g_CB2_MedicalSystemCooldown or not g_CB2_AuxiliaryWeaponCooldown then
+        Debug.Log("Creating Medical System and Auxiliary Weapon Cooldown Callback Instances!")
+        g_CB2_MedicalSystemCooldown = Callback2.Create()
+        g_CB2_MedicalSystemCooldown:Bind(ExtraMonitor)
+        g_CB2_AuxiliaryWeaponCooldown = Callback2.Create()
+        g_CB2_AuxiliaryWeaponCooldown:Bind(ExtraMonitor)
+    end
+
+    -- Cancel active cooldowns
+    Debug.Log("Cancelling medical system / axuliary weapon cooldown callbacks")
+    g_CB2_MedicalSystemCooldown:Cancel()
+    g_CB2_AuxiliaryWeaponCooldown:Cancel()
+
+    -- Clear existing data
+    g_Extra = {}
+
+    -- Get current medical and auxiliary abilities
+    local loadout = Player.GetCurrentLoadout()
+
+    function GetMedicalIdFromLoadout(loadout)
+        local medicalSlotId = 123
+
+        return FindSlotItemIdInBackpack(loadout, medicalSlotId)
+    end
+
+    function GetAuxiliaryIdFromLoadout(loadout)
+        local auxSlotId = 122
+
+        return FindSlotItemIdInBackpack(loadout, auxSlotId)
+    end
+ 
+    function FindSlotItemIdInBackpack(loadout, slotId)
+        if not loadout or not loadout.modules or not loadout.modules.backpack then
+            return nil
+        end
+        for _, moduleInfo in ipairs(loadout.modules.backpack) do
+            if moduleInfo.slot_type_id == slotId then
+                return moduleInfo.item_sdb_id
+            end
+        end
+
+        return nil
+    end
+
+    -- Get the sdb/itemTypeId of the items from loadout
+    local medicalTypeId = GetMedicalIdFromLoadout(loadout)
+    local auxiliaryTypeId = GetAuxiliaryIdFromLoadout(loadout)
+
+    -- Then get the item info from the sdb/itemTypeId
+    local medicalTypeInfo = Game.GetItemInfoByType(medicalTypeId)
+    local auxiliaryTypeInfo = Game.GetItemInfoByType(auxiliaryTypeId)
+
+    -- Now we get the abilityId from the itemInfo and use it to get abilityInfo! \o/
+    local medicalAbilityInfo = Player.GetAbilityInfo(medicalTypeInfo.abilityId)
+    local auxiliaryAbilityInfo = Player.GetAbilityInfo(auxiliaryTypeInfo.abilityId)
+
+    -- Now put all that shit in one place
+    g_Extra.medicalData = {name = tostring(medicalAbilityInfo.name), abilityId = tostring(medicalTypeInfo.abilityId), itemTypeId = medicalTypeId, iconId = medicalAbilityInfo.iconId}
+    g_Extra.auxiliaryData = {name = tostring(auxiliaryAbilityInfo.name), abilityId = tostring(auxiliaryTypeInfo.abilityId), itemTypeId = auxiliaryTypeId, iconId = auxiliaryAbilityInfo.iconId}
+
+    Debug.Log("Phew, post update, this is the data we got")
+    Debug.Table("g_Extra.medicalData", g_Extra.medicalData)
+    Debug.Table("g_Extra.auxiliaryData", g_Extra.auxiliaryData)
+
+    -- Start monitor with a forced call
+    Debug.Log("Starting ExtraMonitor by force call")
+    ExtraMonitor(args)
+
+end
+
+function ExtraMonitor(args)
+    Debug.Table("ExtraMonitor! Here to serve :D", args)
+    Debug.Table("g_Extra.medicalData", g_Extra.medicalData)
+    Debug.Table("g_Extra.auxiliaryData", g_Extra.auxiliaryData)
+
+    -- Detect ability usage
+    if args and args.id then
+        local abilityId = tostring(args.id)
+
+        if abilityId == g_Extra.medicalData.abilityId then
+            Debug.Log("Detected Medical System Used, adding cooldown")
+            AddCooldown(abilityId)
+
+        elseif abilityId == g_Extra.auxiliaryData.abilityId then
+            Debug.Log("Detected Auxiliary Weapon Used, adding cooldown")
+            AddCooldown(abilityId)
+        end
+    end
+
+    local medstate = Player.GetAbilityState(g_Extra.medicalData.abilityId)
+    local medcd = medstate.requirements.remainingCooldown
+
+    if medcd then
+        Debug.Log("Right, your med sysetm has a cooldown, let me setup the callback for you :D")
+        g_CB2_MedicalSystemCooldown:Cancel()
+        g_CB2_MedicalSystemCooldown:Schedule(medcd)
+    end
+
+    if IsOnCooldown(g_Extra.medicalData.abilityId) and not(medcd and medcd > 0.1) then
+        Debug.Log("Your med system is ready! :D Poppin cooldown")
+        PopCooldown(g_Extra.medicalData.abilityId)
+    end
+
+
+    local auxstate = Player.GetAbilityState(g_Extra.auxiliaryData.abilityId)
+    local auxcd = auxstate.requirements.remainingCooldown
+
+    if auxcd then
+        Debug.Log("Good going with that aux weapon, let me setup the cooldown for you :D")
+        g_CB2_AuxiliaryWeaponCooldown:Cancel()
+        g_CB2_AuxiliaryWeaponCooldown:Schedule(auxcd)
+    end
+
+    if IsOnCooldown(g_Extra.auxiliaryData.abilityId) and not(auxcd and auxcd > 0) then
+        Debug.Log("Chief, your aux is back in business! Poppin cooldown")
+        PopCooldown(g_Extra.auxiliaryData.abilityId)
+    end
+
+
+end
+
 
 function IsWatchedAbility(abilityId)
     return g_Abilities[abilityId] ~= nil or false
@@ -314,7 +455,8 @@ end
 
 function PopCooldown(abilityId)
     Debug.Log("PopCooldown", abilityId)
-    local abilityData = g_Abilities[abilityId]
+    -- Get abilityData, check g_Extras if neccessary
+    local abilityData = g_Abilities[abilityId] or (abilityId == g_Extra.medicalData.abilityId and g_Extra.medicalData) or (abilityId == g_Extra.auxiliaryData.abilityId and g_Extra.auxiliaryData)
         
     if g_ActiveCooldowns[abilityId] then
 
@@ -334,10 +476,10 @@ end
 
 function TriggerPulse(abilityData)
     -- abilityData = {abilityId = ability.abilityId, iconId = abilityInfo.iconId}
+    Debug.Table("TriggerPulse", abilityData)
     if g_Options.Debug then Output("TriggerPulse for abilityId " .. tostring(abilityData.abilityId) .. " (" .. abilityData.name .. ")") end
 
 
-    Debug.Table("TriggerPulse", abilityData)
     -- Check Lock
     if g_PulseBusy then
         Debug.Log("g_PulseBusy, firing a callback")

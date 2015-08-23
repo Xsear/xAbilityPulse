@@ -29,6 +29,7 @@ AddonInfo = {
 OUTPUT_PREFIX = "[xAP] "
 TRIGGER_BUSY_DELAY_SECONDS = 1
 TRIGGER_UNLOCK_DELAY_SECONDS = 1
+VERSION_CHECK_URL = "https://api.github.com/repos/Xsear/xAbilityPulse/tags"
 
 
 -- ------------------------------------------
@@ -60,6 +61,10 @@ c_SlashTable_Test = {
 }
 c_SlashTable_Scale = {
     ["scale"] = true,
+}
+c_SlashTable_Version = {
+    ["version"] = true,
+    ["check"] = true,
 }
 --[[
 c_SlashTable_Toggle = {
@@ -94,10 +99,13 @@ g_Options = {}
 g_Options.Enabled = true
 g_Options.Debug = false
 g_Options.ScaleSize = 25
+g_Options.VersionCheck = true
 
 function OnOptionChanged(id, value)
 
-    if id == "Debug" then
+    if id == "__LOADED" then
+        OnOptionsLoaded()
+    elseif id == "Debug" then
         Debug.EnableLogging(value)
     elseif id == "Enabled" then
         -- Nothing that I care to do
@@ -109,10 +117,12 @@ function OnOptionChanged(id, value)
 end
 
 do
+    InterfaceOptions.NotifyOnLoaded(true)
     InterfaceOptions.SaveVersion(AddonInfo.save)
 
     InterfaceOptions.AddCheckBox({id = "Enabled", label = "Enable addon", default = g_Options.Enabled})
     InterfaceOptions.AddCheckBox({id = "Debug", label = "Enable debug", default = g_Options.Debug})
+    InterfaceOptions.AddCheckBox({id = "VersionCheck", label = "Check version on load", default = g_Options.VersionCheck})
     InterfaceOptions.AddSlider({id = "ScaleSize", label = "Icon size scale", default = g_Options.ScaleSize, min = 5, max = 200, inc = 5, suffix = "%"})
 end
 
@@ -127,6 +137,12 @@ function OnComponentLoad()
     LIB_SLASH.BindCallback({slash_list=c_SlashList, func=OnSlash})
 end
 
+function OnOptionsLoaded()
+    if g_Options.VersionCheck then
+        Debug.Log("Verison check enabled, sending onload query")
+        VersionCheck(true)
+    end
+end
 
 -- ------------------------------------------
 -- EVENTS
@@ -163,7 +179,9 @@ function OnSlash(args)
     elseif c_SlashTable_Options[slashKey] then
         InterfaceOptions.OpenToMyOptions()
     --]]
-
+    elseif c_SlashTable_Version[slashKey] then
+        Output("Version")
+        VersionCheck()
     else
         Output("Version " .. AddonInfo.version .. ", currently " .. (g_Options.Enabled and "Enabled" or "Disabled"))
         Output("Slash commands")
@@ -172,6 +190,7 @@ function OnSlash(args)
         end
         Output("Test: " .. _table.concatKeys(c_SlashTable_Test, ", "))
         Output("Scale: " .. _table.concatKeys(c_SlashTable_Scale, ","))
+        Output("Version: " .. _table.concatKeys(c_SlashTable_Version, ","))
         --Output("Options: " .. _table.concatKeys(c_SlashTable_Options, ","))
     end
     
@@ -379,6 +398,29 @@ function TestPulse()
     TriggerPulse(abilityData)
 end
 
+function VersionCheck(quiet)
+    quiet = quiet or false
+    local queryArgs = {
+        url = VERSION_CHECK_URL,
+        cb = function(args, err)
+            if err then 
+                Debug.Warn(err)
+                Output("Something went wrong when checking the verison. :(")
+            else 
+                Debug.Table("VersionCheck HTTPRequest callback args", args)
+                if args[1] then
+                    if unicode.starts(args[1].name, "v") and args[1].name ~= "v"..AddonInfo.version then
+                        Output("A newer version is available! You have v" .. AddonInfo.version .. " and the latest is " .. args[1].name)
+                    elseif not quiet then
+                        Output("Addon is up to date. You have v" .. AddonInfo.version .. "")
+                    end
+                end
+            end
+        end,
+    }
+    HTTPRequest(queryArgs)
+end
+
 
 -- ------------------------------------------
 -- UTILITY/RETURN FUNCTIONS
@@ -405,4 +447,38 @@ function _table.empty(table)
        return true
     end
     return false
+end
+
+function unicode.starts(String,Start)
+   return unicode.sub(String,1,unicode.len(Start))==Start
+end
+
+
+function HTTPRequest(args)
+    -- Local response
+    function OnHTTPResponse(args, err)
+        if err then
+            Debug.Warn("OnHTTPResponse", tostring(err))
+        else
+            Debug.Table("OnHTTPResponse", args)
+        end
+    end
+
+    -- Handle args
+    assert(args.url)
+    args.attempts = args.attempts or 1
+    args.method = args.method or "GET"
+    args.cb = args.cb or OnHTTPResponse
+
+    -- If the system is busy, wait half a second. Limit to 10 attempts.
+    if HTTP.IsRequestPending(args.url) and args.attempts <= 10 then
+        args.attempts = args.attempts + 1
+        Callback2.FireAndForget(HTTPRequest, args, 0.5)
+        return
+    end
+
+    -- Send query
+    if not HTTP.IssueRequest(args.url, args.method, args.data, args.cb) then
+        Debug.Warn("HTTP.IssueRequest failed", args)
+    end
 end

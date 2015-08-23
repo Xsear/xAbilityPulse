@@ -2,7 +2,8 @@
 A Firefall addon that briefly overlays the icon of an ability in the center of the screen whenever it comes back off cooldown, including abilities with charges.
 
 ## Compatability Notes
-Compatible with Firefall Stabilization (v1.3.1334)
+Compatible with Firefall Stabilization (v1.3.1334).
+
 This addon was developed on the Firefall PTS (stabilization-1334) and will presently not function on the live servers (v1.3.1869).
 
 ##Interface Options

@@ -27,8 +27,8 @@ AddonInfo = {
 }
 
 OUTPUT_PREFIX = "[xAP] "
-TRIGGER_BUSY_DELAY_SECONDS = 1
-TRIGGER_UNLOCK_DELAY_SECONDS = 1
+TRIGGER_BUSY_DELAY_SECONDS = 0.5
+TRIGGER_UNLOCK_DELAY_SECONDS = 0.5
 VERSION_CHECK_URL = "https://api.github.com/repos/Xsear/xAbilityPulse/tags"
 
 
@@ -177,8 +177,9 @@ function OnSlash(args)
         Debug.Table("g_Extra", g_Extra)
         Debug.Divider()
     elseif c_SlashTable_Test[slashKey] then
-        Output("Test")
-        TestPulse()
+        local count = args[2] or 1
+        Output("TestPulse")
+        TestPulse(count)
     elseif c_SlashTable_Scale[slashKey] then
         Output("Scale")
         local value = args[2] or Options.ScaleSize
@@ -555,8 +556,6 @@ end
 function TriggerPulse(abilityData)
     -- abilityData = {abilityId = ability.abilityId, iconId = abilityInfo.iconId}
     Debug.Table("TriggerPulse", abilityData)
-    if g_Options.Debug then Output("TriggerPulse for abilityId " .. tostring(abilityData.abilityId) .. " (" .. abilityData.name .. ")") end
-
 
     -- Check Lock
     if g_PulseBusy then
@@ -568,6 +567,9 @@ function TriggerPulse(abilityData)
     -- Lock
     g_PulseBusy = true
     Debug.Log("g_PulseBusy now true")
+
+    -- Debug Output
+    if g_Options.Debug then Output("TriggerPulse for abilityId " .. tostring(abilityData.abilityId) .. " (" .. abilityData.name .. ")") end
 
     -- Set icon
     w_ICON:SetIcon(abilityData.iconId)
@@ -584,19 +586,32 @@ function SetIconScale(value)
     w_ICONFRAME:SetDims(unicode.format("center-x:_; center-y:_; width:%i%%; height:%i%%", value, value))
 end
 
-function TestPulse()
-    -- Pick ability "randomly"
-    local abilityKey = g_Abilities[1]
-    for key, abilityData in pairs(g_Abilities) do
-        if math.random(1,10) % 2 == 0 then
-            abilityKey = key
-            break
+function TestPulse(count)
+    count = tonumber(count) or 1
+
+    Debug.Log("TestPulse with count ", count)
+
+    for i=1,count do
+        -- Pick ability "randomly"
+        local abilityKey = g_Abilities[1]
+        for key, abilityData in pairs(g_Abilities) do
+            if math.random(1,10) % 2 == 0 then
+                abilityKey = key
+                break
+            end
         end
+
+        local abilityData = g_Abilities[abilityKey]
+
+        if not abilityData then
+            Output("! TestPulse tried to send nil abilityData!  abilityKey " .. tostring(abilityKey))
+        end
+
+        Output("TestPulse " .. tostring(i))
+        TriggerPulse(abilityData)
     end
 
-    local abilityData = g_Abilities[abilityKey]
 
-    TriggerPulse(abilityData)
 end
 
 function VersionCheck(quiet)

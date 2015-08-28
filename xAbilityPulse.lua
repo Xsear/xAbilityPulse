@@ -396,19 +396,47 @@ function UpdateExtraMonitors(args)
 
     -- Get the sdb/itemTypeId of the items from loadout
     local medicalTypeId = GetMedicalIdFromLoadout(loadout)
+
+    -- Then get the item info from the sdb/itemTypeId
+    if medicalTypeId then
+        local medicalTypeInfo = Game.GetItemInfoByType(medicalTypeId)
+        if medicalTypeInfo then
+            -- Now we get the abilityId from the itemInfo and use it to get abilityInfo! \o/
+            local medicalAbilityInfo = Player.GetAbilityInfo(medicalTypeInfo.abilityId)
+            if medicalAbilityInfo then
+                -- Now put all that shit in one place
+                g_Extra.medicalData = {name = tostring(medicalAbilityInfo.name), abilityId = tostring(medicalTypeInfo.abilityId), itemTypeId = medicalTypeId, iconId = medicalAbilityInfo.iconId}
+            else
+                Debug.Warn("Could not get medicalAbilityInfo")
+            end
+        else
+            Debug.Warn("Could not get medicalTypeInfo")
+        end
+    else
+        Debug.Warn("Could not get medicalTypeId")
+    end
+
+    -- Get the sdb/itemTypeId of the items from loadout
     local auxiliaryTypeId = GetAuxiliaryIdFromLoadout(loadout)
 
     -- Then get the item info from the sdb/itemTypeId
-    local medicalTypeInfo = Game.GetItemInfoByType(medicalTypeId)
-    local auxiliaryTypeInfo = Game.GetItemInfoByType(auxiliaryTypeId)
-
-    -- Now we get the abilityId from the itemInfo and use it to get abilityInfo! \o/
-    local medicalAbilityInfo = Player.GetAbilityInfo(medicalTypeInfo.abilityId)
-    local auxiliaryAbilityInfo = Player.GetAbilityInfo(auxiliaryTypeInfo.abilityId)
-
-    -- Now put all that shit in one place
-    g_Extra.medicalData = {name = tostring(medicalAbilityInfo.name), abilityId = tostring(medicalTypeInfo.abilityId), itemTypeId = medicalTypeId, iconId = medicalAbilityInfo.iconId}
-    g_Extra.auxiliaryData = {name = tostring(auxiliaryAbilityInfo.name), abilityId = tostring(auxiliaryTypeInfo.abilityId), itemTypeId = auxiliaryTypeId, iconId = auxiliaryAbilityInfo.iconId}
+    if auxiliaryTypeId then
+        local auxiliaryTypeInfo = Game.GetItemInfoByType(auxiliaryTypeId)
+        if auxiliaryTypeInfo then
+            -- Now we get the abilityId from the itemInfo and use it to get abilityInfo! \o/
+            local auxiliaryAbilityInfo = Player.GetAbilityInfo(auxiliaryTypeInfo.abilityId)
+            if auxiliaryAbilityInfo then
+                -- Now put all that shit in one place
+                g_Extra.auxiliaryData = {name = tostring(auxiliaryAbilityInfo.name), abilityId = tostring(auxiliaryTypeInfo.abilityId), itemTypeId = auxiliaryTypeId, iconId = auxiliaryAbilityInfo.iconId}
+            else
+                Debug.Warn("Could not get auxiliaryAbilityInfo")
+            end
+        else
+            Debug.Warn("Could not get auxiliaryTypeInfo")
+        end
+    else
+        Debug.Warn("Could not get auxiliaryTypeId")
+    end
 
     Debug.Log("Phew, post update, this is the data we got")
     Debug.Table("g_Extra.medicalData", g_Extra.medicalData)
@@ -429,43 +457,48 @@ function ExtraMonitor(args)
     if args and args.id then
         local abilityId = tostring(args.id)
 
-        if g_Options.MonitorMedical and abilityId == g_Extra.medicalData.abilityId then
+        if g_Options.MonitorMedical and g_Extra.medicalData and abilityId == g_Extra.medicalData.abilityId then
             Debug.Log("Detected Medical System Used, adding cooldown")
             AddCooldown(abilityId)
 
-        elseif g_Options.MonitorAuxiliary and abilityId == g_Extra.auxiliaryData.abilityId then
+        elseif g_Options.MonitorAuxiliary and g_Extra.auxiliaryData and abilityId == g_Extra.auxiliaryData.abilityId then
             Debug.Log("Detected Auxiliary Weapon Used, adding cooldown")
             AddCooldown(abilityId)
         end
     end
 
-    local medstate = Player.GetAbilityState(g_Extra.medicalData.abilityId)
-    local medcd = medstate.requirements.remainingCooldown
+    -- Detect medical cooldown
+    if g_Extra.medicalData then
+        local medstate = Player.GetAbilityState(g_Extra.medicalData.abilityId)
+        local medcd = medstate.requirements.remainingCooldown
 
-    if medcd then
-        Debug.Log("Right, your med system has a cooldown, let me setup the callback for you :D")
-        g_CB2_MedicalSystemCooldown:Cancel()
-        g_CB2_MedicalSystemCooldown:Schedule(medcd)
+        if medcd then
+            Debug.Log("Right, your med system has a cooldown, let me setup the callback for you :D")
+            g_CB2_MedicalSystemCooldown:Cancel()
+            g_CB2_MedicalSystemCooldown:Schedule(medcd)
+        end
+
+        if g_Options.MonitorMedical and IsOnCooldown(g_Extra.medicalData.abilityId) and not(medcd and medcd > 0.1) then
+            Debug.Log("Your med system is ready! :D Poppin cooldown")
+            PopCooldown(g_Extra.medicalData.abilityId)
+        end
     end
 
-    if g_Options.MonitorMedical and IsOnCooldown(g_Extra.medicalData.abilityId) and not(medcd and medcd > 0.1) then
-        Debug.Log("Your med system is ready! :D Poppin cooldown")
-        PopCooldown(g_Extra.medicalData.abilityId)
-    end
+    -- Detect auxiliary cooldown
+    if g_Extra.auxiliaryData then
+        local auxstate = Player.GetAbilityState(g_Extra.auxiliaryData.abilityId)
+        local auxcd = auxstate.requirements.remainingCooldown
 
+        if auxcd then
+            Debug.Log("Good going with that aux weapon, let me setup the cooldown for you :D")
+            g_CB2_AuxiliaryWeaponCooldown:Cancel()
+            g_CB2_AuxiliaryWeaponCooldown:Schedule(auxcd)
+        end
 
-    local auxstate = Player.GetAbilityState(g_Extra.auxiliaryData.abilityId)
-    local auxcd = auxstate.requirements.remainingCooldown
-
-    if auxcd then
-        Debug.Log("Good going with that aux weapon, let me setup the cooldown for you :D")
-        g_CB2_AuxiliaryWeaponCooldown:Cancel()
-        g_CB2_AuxiliaryWeaponCooldown:Schedule(auxcd)
-    end
-
-    if g_Options.MonitorAuxiliary and IsOnCooldown(g_Extra.auxiliaryData.abilityId) and not(auxcd and auxcd > 0) then
-        Debug.Log("Chief, your aux is back in business! Poppin cooldown")
-        PopCooldown(g_Extra.auxiliaryData.abilityId)
+        if g_Options.MonitorAuxiliary and IsOnCooldown(g_Extra.auxiliaryData.abilityId) and not(auxcd and auxcd > 0) then
+            Debug.Log("Chief, your aux is back in business! Poppin cooldown")
+            PopCooldown(g_Extra.auxiliaryData.abilityId)
+        end
     end
 
 

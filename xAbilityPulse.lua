@@ -596,21 +596,21 @@ function TestPulse(count)
 
     for i=1,count do
         -- Pick ability "randomly"
-        local abilityKey = g_Abilities[1]
-        for key, abilityData in pairs(g_Abilities) do
+        local abilityKey = nil
+        for key, data in pairs(g_Abilities) do
             if math.random(1,10) % 2 == 0 then
                 abilityKey = key
                 break
             end
         end
 
-        local abilityData = g_Abilities[abilityKey]
+        local abilityData = abilityKey and g_Abilities[abilityKey] or nextvar(g_Abilities)
 
         if not abilityData then
             Output("! TestPulse tried to send nil abilityData!  abilityKey " .. tostring(abilityKey))
         end
 
-        Output("TestPulse " .. tostring(i))
+        if count > 1 then Output("TestPulse " .. tostring(i)) end
         TriggerPulse(abilityData)
     end
 

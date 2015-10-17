@@ -140,6 +140,9 @@ do
     InterfaceOptions.AddSlider({id = "MaxAlpha", label = "Icon alpha", default = g_Options.MaxAlpha, min = 0, max = 1, inc = 0.05, multi = 100, suffix = "%"})
     InterfaceOptions.AddSlider({id = "FadeInDuration", label = "Icon fade in duration", default = g_Options.FadeInDuration, min = 0, max = 2, inc = 0.05, suffix = "s"})
     InterfaceOptions.AddSlider({id = "FadeOutDuration", label = "Icon fade out duration", default = g_Options.FadeOutDuration, min = 0, max = 2, inc = 0.05, suffix = "s"})
+
+    InterfaceOptions.AddMovableFrame({frame = w_ICONFRAME, label = "Ability Pulse", scalable = false})
+
 end
 
 

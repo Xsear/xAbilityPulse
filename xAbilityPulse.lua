@@ -108,6 +108,7 @@ g_Options.ScaleSize = 25
 g_Options.MaxAlpha = 0.8
 g_Options.FadeInDuration = 0.25
 g_Options.FadeOutDuration = 0.75
+g_Options.AlwaysShowFrame = false
 
 function OnOptionChanged(id, value)
 
@@ -122,6 +123,8 @@ function OnOptionChanged(id, value)
         SetIconScale(value)
     elseif id == "MonitorMedical" or "MonitorAuxiliary" then
         UpdateExtraMonitors()
+    elseif id == "AlwaysShowFrame" then
+        OnHudShow(HudManager.IsVisible())
     end
     
     g_Options[id] = value
@@ -134,6 +137,7 @@ do
     InterfaceOptions.AddCheckBox({id = "Enabled", label = "Enable addon", default = g_Options.Enabled})
     InterfaceOptions.AddCheckBox({id = "Debug", label = "Enable debug", default = g_Options.Debug})
     InterfaceOptions.AddCheckBox({id = "VersionCheck", label = "Check version on load", default = g_Options.VersionCheck})
+    InterfaceOptions.AddCheckBox({id = "AlwaysShowFrame", label = "Always display pulses", tooltip = "If checked, the addon may display pulses during in-game cinematics, etc.", default = g_Options.AlwaysShowFrame})
     InterfaceOptions.AddCheckBox({id = "MonitorMedical", label = "Pulse for medical system cooldown", default = g_Options.MonitorMedical})
     InterfaceOptions.AddCheckBox({id = "MonitorAuxiliary", label = "Pulse for auxiliary weapon cooldown", default = g_Options.MonitorAuxiliary})
     InterfaceOptions.AddSlider({id = "ScaleSize", label = "Icon size scale", default = g_Options.ScaleSize, min = 0, max = 200, inc = 5, suffix = "%"})
@@ -154,6 +158,7 @@ function OnComponentLoad()
     Debug.EnableLogging(Component.GetSetting("Debug"))
     InterfaceOptions.SetCallbackFunc(OnOptionChanged)
     LIB_SLASH.BindCallback({slash_list=c_SlashList, func=OnSlash})
+    HudManager.BindOnShow(OnHudShow)
 end
 
 function OnOptionsLoaded()
@@ -215,6 +220,11 @@ function OnSlash(args)
         --Output("Options: " .. _table.concatKeys(c_SlashTable_Options, ","))
     end
     
+end
+
+function OnHudShow(show, dur)
+    show = (g_Options.AlwaysShowFrame and true) or show
+    w_ICONFRAME:Show(show)
 end
 
 function OnPlayerReady(args)

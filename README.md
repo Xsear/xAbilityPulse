@@ -12,6 +12,7 @@ This addon was developed on the Firefall PTS (stabilization-1334) and will prese
 | Enable addon | If unchecked, the addon will stop tracking cooldowns, stopping normal operations. |
 | Enable debug | If checked, the addon will enable debug logging and possibly also output debug messages to the system channel. |
 | Check version on load | If checked, the addon will query GitHub for the version number of the latest relase and notify you if it differs from your local version, once everytime the addon is loaded. |
+| Always display pulses | If checked, the addon may display pulses during in-game cinematics, etc. |
 | Pulse for medical system cooldown | If checked, the addon will also pulse when your medical system comes off cooldown. |
 | Pulse for auxiliary weapon cooldown | If checked, the addon will also pulse when your auxiliary weapon comes off cooldown. |
 | Icon size scale | The slider allows you to scale the size of the ability icon. |

@@ -2,7 +2,7 @@
 A Firefall addon that briefly overlays the icon of an ability in the center of the screen whenever it comes back off cooldown, including abilities with charges.
 
 ## Compatability Notes
-Compatible with Firefall Stabilization (v1.3.1334).
+Compatible with Firefall Stabilization (v1.5.1350).
 
 This addon was developed on the Firefall PTS (stabilization-1334) and will presently not function on the live servers (v1.3.1869).
 
@@ -18,6 +18,9 @@ This addon was developed on the Firefall PTS (stabilization-1334) and will prese
 | Icon alpha | The slider allows you to set the target alpha for the icon fade in effect. |
 | Icon fade in duration | The slider allows you to set the duration of the icon fade in effect. |
 | Icon fade out duration | The slider allows you to set the duration of the icon fade out effect. |
+
+###Moveable Frame
+You can adjust the position of the icon through the interface options menu, by moving the frame labeled "Ability Pulse" to the desired location. Please note that the size of this frame is not indicative of the size of the icon.
 
 ##Slash Commands
 **Slash handles**: xap, xabilitypulse, abilitypulse

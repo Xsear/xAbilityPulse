@@ -212,12 +212,12 @@ function OnSlash(args)
         Output("Version " .. AddonInfo.version .. ", currently " .. (g_Options.Enabled and "Enabled" or "Disabled"))
         Output("Slash commands")
         if g_Options.Debug then
-            Output("Stat: " .. _table.concatKeys(c_SlashTable_Stat, ", "))
+            Output("Stat: " .. _table_concatKeys(c_SlashTable_Stat, ", "))
         end
-        Output("Test: " .. _table.concatKeys(c_SlashTable_Test, ", "))
-        Output("Scale: " .. _table.concatKeys(c_SlashTable_Scale, ","))
-        Output("Version: " .. _table.concatKeys(c_SlashTable_Version, ","))
-        --Output("Options: " .. _table.concatKeys(c_SlashTable_Options, ","))
+        Output("Test: " .. _table_concatKeys(c_SlashTable_Test, ", "))
+        Output("Scale: " .. _table_concatKeys(c_SlashTable_Scale, ","))
+        Output("Version: " .. _table_concatKeys(c_SlashTable_Version, ","))
+        --Output("Options: " .. _table_concatKeys(c_SlashTable_Options, ","))
     end
     
 end
@@ -638,7 +638,7 @@ function VersionCheck(quiet)
             else 
                 Debug.Table("VersionCheck HTTPRequest callback args", args)
                 if args[1] then
-                    if unicode.starts(args[1].name, "v") and args[1].name ~= "v"..AddonInfo.version then
+                    if _unicode_starts(args[1].name, "v") and args[1].name ~= "v"..AddonInfo.version then
                         Output("A newer version is available! You have v" .. AddonInfo.version .. " and the latest is " .. args[1].name)
                     elseif not quiet then
                         Output("Addon is up to date. You have v" .. AddonInfo.version .. "")
@@ -663,7 +663,7 @@ function Output(text)
     ChatLib.SystemMessage(args);
 end
 
-function _table.concatKeys(inputTable, separator)
+function _table_concatKeys(inputTable, separator)
     local output = {}
     for key, _ in pairs(inputTable) do
         output[#output + 1] = key
@@ -671,17 +671,17 @@ function _table.concatKeys(inputTable, separator)
     return table.concat(output, separator)
 end
 
-function _table.empty(table)
+function _table_empty(table)
     if not table or next(table) == nil then
        return true
     end
     return false
 end
 
-function unicode.starts(String,Start)
+
+function _unicode_starts(String,Start)
    return unicode.sub(String,1,unicode.len(Start))==Start
 end
-
 
 function HTTPRequest(args)
     -- Local response

@@ -46,7 +46,7 @@ g_PulseBusy = false
 g_CB2_MedicalSystemCooldown = nil
 g_CB2_AuxiliaryWeaponCooldown = nil
 g_Extra = {}
-
+g_Loaded = false
 
 -- ------------------------------------------
 -- SLASH
@@ -69,21 +69,24 @@ c_SlashTable_Version = {
     ["version"] = true,
     ["check"] = true,
 }
+
 --[[
 c_SlashTable_Toggle = {
     ["toggle"] = true,
+}
+c_SlashTable_Toggle_On = {
     ["on"] = true,
-    ["off"] = true,
     ["enable"] = true,
     ["enabled"] = true,
+}
+c_SlashTable_Toggle_Off = {
+    ["off"] = true,
     ["disable"] = true,
     ["disabled"] = true,
 }
 c_SlashTable_Debug = {
     ["debug"] = true,
 }
---]]
---[[
 c_SlashTable_Options = {
     ["options"] = true,
     ["config"] = true,
@@ -92,6 +95,7 @@ c_SlashTable_Options = {
     ["edit"] = true,
 }
 --]]
+
 
 
 -- ------------------------------------------
@@ -118,7 +122,7 @@ function OnOptionChanged(id, value)
         Component.SaveSetting("Debug", value)
         Debug.EnableLogging(value)
     elseif id == "Enabled" then
-        -- Nothing that I care to do
+        -- nothing at the moment
     elseif id == "ScaleSize" then
         SetIconScale(value)
     elseif id == "MonitorMedical" or "MonitorAuxiliary" then
@@ -128,6 +132,11 @@ function OnOptionChanged(id, value)
     end
     
     g_Options[id] = value
+end
+
+function ChangeOption(id, value)
+    Component.SaveSetting(id, value)
+    OnOptionChanged(id, value)
 end
 
 do
@@ -146,13 +155,12 @@ do
     InterfaceOptions.AddSlider({id = "FadeOutDuration", label = "Icon fade out duration", default = g_Options.FadeOutDuration, min = 0, max = 2, inc = 0.05, suffix = "s"})
 
     InterfaceOptions.AddMovableFrame({frame = w_ICONFRAME, label = "Ability Pulse", scalable = false})
-
 end
 
 
 -- ------------------------------------------
 -- LOAD
--- ------------------------------------------å
+-- ------------------------------------------
 
 function OnComponentLoad()
     Debug.EnableLogging(Component.GetSetting("Debug"))
@@ -162,6 +170,7 @@ function OnComponentLoad()
 end
 
 function OnOptionsLoaded()
+    g_Loaded = true
     if g_Options.VersionCheck then
         Debug.Log("Verison check enabled, sending onload query")
         VersionCheck(true)
@@ -192,24 +201,36 @@ function OnSlash(args)
         Output("Scale")
         local value = args[2] or Options.ScaleSize
         SetIconScale(value)
+
     --[[
-    elseif c_SlashTable_Toggle[slashKey] then
-        if slashKey == "toggle" then
-            local enabled = not g_Options.Enabled
-            OnOptionChanged("Enabled", enabled)
+    elseif c_SlashTable_Toggle[slashKey] or c_SlashTable_Toggle_On[slashKey] or c_SlashTable_Toggle_Off[slashKey] then
+        local enabled = nil
+        if c_SlashTable_Toggle then
+            enabled = not g_Options.Enabled
+        elseif c_SlashTable_Toggle_On[slashKey] then
+            enabled = true
+        else 
+            enabled = false
+        end
+        ChangeOption("Enabled", enabled)
+        if enabled then
+            Output("AbilityPulse has been tempoarily enabled")
+        else
+            Output("AbilityPulse has been tempoarily disabled")
         end
 
+    
     elseif c_SlashTable_Debug[slashKey] then
-    --]]
-    --[[
+    
     elseif c_SlashTable_Options[slashKey] then
         InterfaceOptions.OpenToMyOptions()
     --]]
+
     elseif c_SlashTable_Version[slashKey] then
         Output("Version")
         VersionCheck()
     else
-        Output("Version " .. AddonInfo.version .. ", currently " .. (g_Options.Enabled and "Enabled" or "Disabled"))
+        Output("Ability Pulse v" .. AddonInfo.version .. ", currently " .. (g_Options.Enabled and "Enabled" or "Disabled"))
         Output("Slash commands")
         if g_Options.Debug then
             Output("Stat: " .. _table_concatKeys(c_SlashTable_Stat, ", "))

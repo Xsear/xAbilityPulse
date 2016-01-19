@@ -13,7 +13,7 @@ require "lib/lib_Slash"
 require "lib/lib_ChatLib"
 require "lib/lib_Callback2"
 require "lib/lib_InterfaceOptions"
-
+require "lib/lib_HudManager"
 
 -- ------------------------------------------
 -- CONSTANTS

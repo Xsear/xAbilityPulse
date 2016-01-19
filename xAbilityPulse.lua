@@ -106,6 +106,7 @@ g_Options = {}
 g_Options.Enabled = true
 g_Options.Debug = false
 g_Options.VersionCheck = false
+g_Options.MonitorAbilities = true
 g_Options.MonitorMedical = true
 g_Options.MonitorAuxiliary = true
 g_Options.ScaleSize = 25
@@ -147,6 +148,7 @@ do
     InterfaceOptions.AddCheckBox({id = "Debug", label = "Enable debug", default = g_Options.Debug})
     InterfaceOptions.AddCheckBox({id = "VersionCheck", label = "Check version on load", tooltip = "If checked, the addon will check for updates on GitHub when the addon is loaded (or reloaded). You can also check for updates through a slash command at any time.", default = g_Options.VersionCheck})
     InterfaceOptions.AddCheckBox({id = "AlwaysShowFrame", label = "Always display pulses", tooltip = "If checked, the addon may display pulses during in-game cinematics, etc.", default = g_Options.AlwaysShowFrame})
+    InterfaceOptions.AddCheckBox({id = "MonitorAbilities", label = "Pulse for ability cooldowns", default = g_Options.MonitorAbilities})
     InterfaceOptions.AddCheckBox({id = "MonitorMedical", label = "Pulse for medical system cooldown", default = g_Options.MonitorMedical})
     InterfaceOptions.AddCheckBox({id = "MonitorAuxiliary", label = "Pulse for auxiliary weapon cooldown", default = g_Options.MonitorAuxiliary})
     InterfaceOptions.AddSlider({id = "ScaleSize", label = "Icon size scale", default = g_Options.ScaleSize, min = 0, max = 200, inc = 5, suffix = "%"})
@@ -265,7 +267,7 @@ function OnAbilityUsed(args)
             local noCooldown = (args.cooldown < 1)
 
 
-            if IsWatchedAbility(abilityId) then
+            if g_Options.MonitorAbilities and IsWatchedAbility(abilityId) then
                 Debug.Table("OnAbilityUsed", {abilityId, noCooldown})
 
                 

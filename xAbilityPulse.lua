@@ -20,9 +20,9 @@ require "lib/lib_HudManager"
 -- ------------------------------------------
 
 AddonInfo = {
-    release  = "2015-08-23",
-    version = "1.4",
-    patch = "1.3.1334 (pts)",
+    release  = "2016-01-20",
+    version = "1.5",
+    patch = "1.6.14xx",
     save = 1,
 }
 

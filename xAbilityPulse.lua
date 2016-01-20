@@ -99,7 +99,7 @@ c_SlashTable_Options = {
 
 
 -- ------------------------------------------
--- Options
+-- OPTIONS
 -- ------------------------------------------
 
 g_Options = {}
@@ -151,8 +151,8 @@ do
     InterfaceOptions.AddCheckBox({id = "MonitorAbilities", label = "Pulse for ability cooldowns", default = g_Options.MonitorAbilities})
     InterfaceOptions.AddCheckBox({id = "MonitorMedical", label = "Pulse for medical system cooldown", default = g_Options.MonitorMedical})
     InterfaceOptions.AddCheckBox({id = "MonitorAuxiliary", label = "Pulse for auxiliary weapon cooldown", default = g_Options.MonitorAuxiliary})
-    InterfaceOptions.AddSlider({id = "ScaleSize", label = "Icon size scale", default = g_Options.ScaleSize, min = 0, max = 200, inc = 5, suffix = "%"})
-    InterfaceOptions.AddSlider({id = "MaxAlpha", label = "Icon alpha", default = g_Options.MaxAlpha, min = 0, max = 1, inc = 0.05, multi = 100, suffix = "%"})
+    InterfaceOptions.AddSlider({id = "ScaleSize", label = "Icon size scale", default = g_Options.ScaleSize, min = 0, max = 200, inc = 5, format="%0.0f", suffix = "%"})
+    InterfaceOptions.AddSlider({id = "MaxAlpha", label = "Icon alpha", default = g_Options.MaxAlpha, min = 0, max = 1, inc = 0.05, multi = 100, format="%0.0f", suffix = "%"})
     InterfaceOptions.AddSlider({id = "FadeInDuration", label = "Icon fade in duration", default = g_Options.FadeInDuration, min = 0, max = 2, inc = 0.05, suffix = "s"})
     InterfaceOptions.AddSlider({id = "FadeOutDuration", label = "Icon fade out duration", default = g_Options.FadeOutDuration, min = 0, max = 2, inc = 0.05, suffix = "s"})
 

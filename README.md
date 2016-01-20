@@ -1,8 +1,5 @@
-# xAbilityPulse
-A Firefall addon that briefly overlays the icon of any ability on your actionbar in the center of the screen when its cooldown has finished..
-
-## Compatability Notes
-Compatible with Firefall v1.6.14xx.
+# Ability Pulse
+A Firefall addon that briefly overlays the icon of any ability on your actionbar in the center of the screen when its cooldown has finished.
 
 ##Interface Options
 | Option  | Description |

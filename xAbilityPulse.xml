@@ -7,8 +7,8 @@
     <Info
         title="xAbilityPulse"
         author="Xsear"
-        description="Briefly overlays the icon of an ability in the center of the screen whenever it comes off cooldown"
-        url="//github.com/Xsear/xAbilityPulse"
+        description="Briefly overlays the icon of any ability on your actionbar in the center of the screen when its cooldown has finished."
+        url="//forums.firefall.com/community/threads/XXXX_FIXME"
         uiVersion="1000"
     />
 

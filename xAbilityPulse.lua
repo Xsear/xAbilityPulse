@@ -166,7 +166,7 @@ end
 
 function OnComponentLoad()
     Debug.EnableLogging(Component.GetSetting("Debug"))
-    InterfaceOptions.SetCallbackFunc(OnOptionChanged)
+    InterfaceOptions.SetCallbackFunc(OnOptionChanged, "Ability Pulse")
     LIB_SLASH.BindCallback({slash_list=c_SlashList, func=OnSlash})
     HudManager.BindOnShow(OnHudShow)
 end

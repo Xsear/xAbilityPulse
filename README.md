@@ -1,7 +1,11 @@
 # Ability Pulse
 A Firefall addon that briefly overlays the icon of any ability on your actionbar in the center of the screen when its cooldown has finished.
 
-##Interface Options
+## Features
+* Trigger the pulse for Ability, Medical System and Auxillary Weapon cooldowns.
+* Configure the position, scale and timing of the icon pulse.
+
+## Interface Options
 | Option  | Description |
 |------------- | ------------- |
 | Enable addon | If unchecked, the addon will stop tracking cooldowns, stopping normal operations. |
@@ -16,10 +20,10 @@ A Firefall addon that briefly overlays the icon of any ability on your actionbar
 | Icon fade in duration | The slider allows you to set the duration of the icon fade in effect. |
 | Icon fade out duration | The slider allows you to set the duration of the icon fade out effect. |
 
-###Moveable Frame
+### Moveable Frame
 You can adjust the position of the icon through the interface options menu, by moving the frame labeled "Ability Pulse" to the desired location. Please note that the size of this frame is not indicative of the size of the icon.
 
-##Slash Commands
+## Slash Commands
 **Slash handles**: xap, xabilitypulse, abilitypulse
 
 | Command  | Description |

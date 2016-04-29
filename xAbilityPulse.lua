@@ -31,7 +31,6 @@ TRIGGER_BUSY_DELAY_SECONDS = 0.5
 TRIGGER_UNLOCK_DELAY_SECONDS = 0.5
 VERSION_CHECK_URL = "https://api.github.com/repos/Xsear/xAbilityPulse/tags"
 
-
 -- ------------------------------------------
 -- GLOBALS
 -- ------------------------------------------
@@ -41,7 +40,7 @@ w_ICON = Component.GetWidget("Icon")
 
 g_Abilities = {}
 g_ActiveCooldowns = {}
-g_Temp_UsedAbilityHasCharges_Id = {}
+g_AbilityHasCharges = {}
 g_PulseBusy = false
 g_CB2_MedicalSystemCooldown = nil
 g_CB2_AuxiliaryWeaponCooldown = nil
@@ -194,6 +193,7 @@ function OnSlash(args)
         Debug.Table("g_Abilities", g_Abilities)
         Debug.Table("g_ActiveCooldowns", g_ActiveCooldowns)
         Debug.Table("g_Extra", g_Extra)
+        Debug.Table("g_AbilityHasCharges", g_AbilityHasCharges)
         Debug.Divider()
     elseif c_SlashTable_Test[slashKey] then
         local count = args[2] or 1
@@ -258,84 +258,119 @@ function OnBattleframeChanged(args)
     UpdateAbilities(args)
 end
 
-function OnAbilityUsed(args)
+function OnAbilityReady(args) -- Used both to Add and Pop cooldown.
     if g_Options.Enabled then
 
-        -- Abilities on the actionbar
-        if args.index ~= -1 then
-            local abilityId = tostring(args.id) or 0 -- Ensure not userdata
-            local noCooldown = (args.cooldown < 1)
-
-
-            if g_Options.MonitorAbilities and IsWatchedAbility(abilityId) then
-                Debug.Table("OnAbilityUsed", {abilityId, noCooldown})
-
-                
-                local abilityState = Player.GetAbilityState(abilityId)
-                Debug.Table("abilityState", abilityState)
-                if abilityState.requirements.chargeCount ~= -1 then
-                    Debug.Log("This ability can have charges")
-                    g_Temp_UsedAbilityHasCharges_Id[abilityId] = abilityState.requirements.chargeCount
-                    Debug.Log("OnAbilityUsed set g_Temp_UsedAbilityHasCharges_Id["..abilityId.." to ", g_Temp_UsedAbilityHasCharges_Id[abilityId], " which is ", g_Abilities[abilityId].name)
-                end
-
-                AddCooldown(abilityId)
-            end
-        
-        -- Abilities outside the actionbar
-        else
-            ExtraMonitor(args)
-        end
-
-    end
-end
-
-function OnAbilityReady(args)
-    if g_Options.Enabled then
+        -- Check if valid ability
         local abilityId = tostring(args.id) -- Ensure not userdata
-        if not g_Abilities[abilityId] then return end
+        if not g_Abilities[abilityId] then return end -- Only handle known abilities
+
+        -- Get ability state
+        local abilityState = Player.GetAbilityState(abilityId)
+
+        -- Prepare variables
         local isReady = args.ready or false
-        local hasJustComeOffCooldown = args.elapsed_cooldown ~= nil and args.elapsed_cooldown > 1
-        --Debug.Table("Player.GetAbilityState(abilityId)", Player.GetAbilityState(abilityId))
-            
+        local hasValidRemainingCooldown = abilityState.requirements.remainingCooldown ~= nil and abilityState.requirements.remainingCooldown > 1
+        local hasCharges = g_AbilityHasCharges[abilityId] ~= nil or false
 
-        -- If ready get more advanced data
-        if isReady and IsOnCooldown(abilityId) then 
-            local abilityState = Player.GetAbilityState(abilityId)
-            Debug.Table("OnAbilityReady for ".. abilityId .. " (" .. g_Abilities[abilityId].name .. ") with abilityState", abilityState)
-            Debug.Log("hasJustComeOffCooldown: ", tostring(hasJustComeOffCooldown))
+        -- Debug
+        Debug.Table("OnAbilityReady for " .. abilityId .. " (" .. g_Abilities[abilityId].name .. ")", {
+            [1] = {
+                isReady=isReady,
+                hasValidRemainingCooldown=hasValidRemainingCooldown,
+                hasCharges=hasCharges,
+            },
+            [2] = {
+                abilityState=abilityState,
+            }
+        })
 
-            if abilityState.inEffect then
-                Debug.Log("Well, this ability is currently active, so we definitely didnt get this event because it came off cooldown, probably.")
+        -- Check if ability has gone on cooldown
+        if not isReady and hasValidRemainingCooldown and (not hasCharges and not IsOnCooldown(abilityId)) then
+            Debug.Log("Putting on cooldown from OnAbilityReady")
+            AddCooldown(abilityId)
 
-            elseif g_Temp_UsedAbilityHasCharges_Id[abilityId] then
-                Debug.Log("OnAbilityReady finds event that says that ability " .. abilityId .. " (" .. g_Abilities[abilityId].name .. ") has refreshed, but we know it can have charges, so we must check carefully")
+        -- Check if ability has come off cooldown
+        elseif isReady and IsOnCooldown(abilityId) then
+            -- Handle abilities with charges (Multi Turret... pretty much.)
+            if g_AbilityHasCharges[abilityId] then
+                Debug.Log("This ability has charges,  so we must check carefully")
 
-                Debug.Log("g_Temp_UsedAbilityHasCharges_Id[abilityId] = ", g_Temp_UsedAbilityHasCharges_Id[abilityId])
+                Debug.Log("g_AbilityHasCharges[abilityId] = ", g_AbilityHasCharges[abilityId])
                 
                 Debug.Log("abilityState.requirements.chargeCount = ", abilityState.requirements.chargeCount)
 
-                if abilityState.requirements.chargeCount > g_Temp_UsedAbilityHasCharges_Id[abilityId] then
+                -- Regenerated charge
+                if abilityState.requirements.chargeCount > g_AbilityHasCharges[abilityId] then
                     Debug.Log("There are more charges now than we have stored, so this looks like a legit cooldown refresh!")
                     PopCooldown(abilityId)
                     Debug.Log("Updating known charges")
-                    g_Temp_UsedAbilityHasCharges_Id[abilityId] = abilityState.requirements.chargeCount
-                    Debug.Log("g_Temp_UsedAbilityHasCharges_Id[abilityId]", g_Temp_UsedAbilityHasCharges_Id[abilityId])
+                    g_AbilityHasCharges[abilityId] = abilityState.requirements.chargeCount
+                    Debug.Log("g_AbilityHasCharges[abilityId]", g_AbilityHasCharges[abilityId])
 
-                elseif abilityState.requirements.chargeCount < g_Temp_UsedAbilityHasCharges_Id[abilityId] then
-                    Debug.Log("There are less charges now than we had when we activated the ability, not sure what that means, but it definitely does not mean we should pop anything")
+                -- Lost charge
+                elseif abilityState.requirements.chargeCount < g_AbilityHasCharges[abilityId] then
+                    Debug.Log("There are less charges now than we had when we activated the ability, not sure what that means, but it definitely does not mean we should pop anything") -- This does not happen normally due to event activation order
+
+                -- Charges unchanged
                 else
                     Debug.Log("The number of charges is the same as when we activated, so this is not the time to celebrate a cooldown completion.")
                 end
-        
-            elseif hasJustComeOffCooldown then
-                Debug.Log("OnAbilityReady suggests that ability " .. abilityId .. " (" .. g_Abilities[abilityId].name .. ") has refreshed, and we trust blindly")
+
+            -- Standard abilities
+            else
+                Debug.Log("Looking good, popping cooldown.")
                 PopCooldown(abilityId)
             end
         end
     end
 end
 
+function OnAbilitiesChanged(args) -- Used ONLY to add cooldowns for some abilities that have un-reliable behaviour
+    if g_Options.Enabled then
+        for abilityId, ability in pairs(g_Abilities) do
+            if not IsOnCooldown(abilityId) then
+                local abilityState = Player.GetAbilityState(abilityId)
+                local isReady = abilityState.isReady or false
+                local hasValidRemainingCooldown = abilityState.requirements.remainingCooldown ~= nil and abilityState.requirements.remainingCooldown > 1
+                if not isReady and hasValidRemainingCooldown then
+                    Debug.Log("Putting on cooldown from OnAbilitiesChanged")
+                    AddCooldown(abilityId)
+                end
+            end
+        end
+    end
+end
+
+function OnAbilityUsed(args) -- Used ONLY to add cooldowns for abilities with charges (and extra abilities like med system and aux weapon)
+    if g_Options.Enabled then
+
+        -- Abilities on the actionbar
+        if args.index ~= -1 then
+            -- Check if valid ability
+            local abilityId = tostring(args.id) -- Ensure not userdata
+            if not g_Abilities[abilityId] then return end -- Only handle known abilities
+
+            -- Only if we care about abilities and this ability
+            if g_Options.MonitorAbilities and IsWatchedAbility(abilityId) then
+                local abilityState = Player.GetAbilityState(abilityId)
+                Debug.Table("OnAbilityUsed " .. abilityId .. " (" .. g_Abilities[abilityId].name .. ")", abilityState)
+
+                -- Handle only abilities with charges
+                if abilityState.requirements.chargeCount ~= -1 then
+                    g_AbilityHasCharges[abilityId] = abilityState.requirements.chargeCount
+                    Debug.Log("Setting g_AbilityHasCharges["..abilityId.."] (" .. g_Abilities[abilityId].name .. ") to ", g_AbilityHasCharges[abilityId])
+
+                    AddCooldown(abilityId)
+                end
+            end
+        
+        -- Abilities outside the actionbar
+        else
+            ExtraMonitor(args)
+        end
+    end
+end
 
 -- ------------------------------------------
 -- Functions

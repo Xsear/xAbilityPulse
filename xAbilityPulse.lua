@@ -19,17 +19,18 @@ require "lib/lib_HudManager"
 -- CONSTANTS
 -- ------------------------------------------
 
-AddonInfo = {
+c_AddonInfo = {
     release  = "2016-04-29",
     version = "1.5",
     patch = "1.7.1957",
     save = 1,
 }
 
-OUTPUT_PREFIX = "[xAP] "
-TRIGGER_BUSY_DELAY_SECONDS = 0.5
-TRIGGER_UNLOCK_DELAY_SECONDS = 0.5
-VERSION_CHECK_URL = "https://api.github.com/repos/Xsear/xAbilityPulse/tags"
+c_OutputPrefix = "[xAP] "
+c_TriggerBusyDelaySeconds = 0.5
+c_TriggerUnlockDelaySeconds = 0.5
+c_VersionCheckUrl = "https://api.github.com/repos/Xsear/xAbilityPulse/tags"
+
 
 -- ------------------------------------------
 -- GLOBALS
@@ -46,6 +47,7 @@ g_CB2_MedicalSystemCooldown = nil
 g_CB2_AuxiliaryWeaponCooldown = nil
 g_Extra = {}
 g_Loaded = false
+
 
 -- ------------------------------------------
 -- SLASH
@@ -68,33 +70,6 @@ c_SlashTable_Version = {
     ["version"] = true,
     ["check"] = true,
 }
-
---[[
-c_SlashTable_Toggle = {
-    ["toggle"] = true,
-}
-c_SlashTable_Toggle_On = {
-    ["on"] = true,
-    ["enable"] = true,
-    ["enabled"] = true,
-}
-c_SlashTable_Toggle_Off = {
-    ["off"] = true,
-    ["disable"] = true,
-    ["disabled"] = true,
-}
-c_SlashTable_Debug = {
-    ["debug"] = true,
-}
-c_SlashTable_Options = {
-    ["options"] = true,
-    ["config"] = true,
-    ["conf"] = true,
-    ["setup"] = true,
-    ["edit"] = true,
-}
---]]
-
 
 
 -- ------------------------------------------
@@ -141,7 +116,7 @@ end
 
 do
     InterfaceOptions.NotifyOnLoaded(true)
-    InterfaceOptions.SaveVersion(AddonInfo.save)
+    InterfaceOptions.SaveVersion(c_AddonInfo.save)
 
     InterfaceOptions.AddCheckBox({id = "Enabled", label = "Enable addon", default = g_Options.Enabled})
     InterfaceOptions.AddCheckBox({id = "Debug", label = "Enable debug", default = g_Options.Debug})
@@ -232,7 +207,7 @@ function OnSlash(args)
         Output("Version")
         VersionCheck()
     else
-        Output("Ability Pulse v" .. AddonInfo.version .. ", currently " .. (g_Options.Enabled and "Enabled" or "Disabled"))
+        Output("Ability Pulse v" .. c_AddonInfo.version .. ", currently " .. (g_Options.Enabled and "Enabled" or "Disabled"))
         Output("Slash commands")
         if g_Options.Debug then
             Output("Stat: " .. _table_concatKeys(c_SlashTable_Stat, ", "))
@@ -242,7 +217,6 @@ function OnSlash(args)
         Output("Version: " .. _table_concatKeys(c_SlashTable_Version, ","))
         --Output("Options: " .. _table_concatKeys(c_SlashTable_Options, ","))
     end
-    
 end
 
 function OnHudShow(show, dur)
@@ -371,6 +345,7 @@ function OnAbilityUsed(args) -- Used ONLY to add cooldowns for abilities with ch
         end
     end
 end
+
 
 -- ------------------------------------------
 -- Functions
@@ -517,7 +492,6 @@ function UpdateExtraMonitors(args)
     -- Start monitor with a forced call
     Debug.Log("Starting ExtraMonitor by force call")
     ExtraMonitor(args)
-
 end
 
 function ExtraMonitor(args)
@@ -572,10 +546,7 @@ function ExtraMonitor(args)
             PopCooldown(g_Extra.auxiliaryData.abilityId)
         end
     end
-
-
 end
-
 
 function IsWatchedAbility(abilityId)
     return g_Abilities[abilityId] ~= nil or false
@@ -631,7 +602,7 @@ function TriggerPulse(abilityData)
     -- Check Lock
     if g_PulseBusy then
         Debug.Log("g_PulseBusy, firing a callback")
-        Callback2.FireAndForget(TriggerPulse, abilityData, TRIGGER_BUSY_DELAY_SECONDS)
+        Callback2.FireAndForget(TriggerPulse, abilityData, c_TriggerBusyDelaySeconds)
         return
     end
 
@@ -650,7 +621,7 @@ function TriggerPulse(abilityData)
     w_ICON:QueueParam("alpha", 0, g_Options.FadeOutDuration, "ease-out")
 
     -- Queue Unlock
-    Callback2.FireAndForget(function() g_PulseBusy = false Debug.Log("g_PulseBusy now false") end, nil, TRIGGER_UNLOCK_DELAY_SECONDS)
+    Callback2.FireAndForget(function() g_PulseBusy = false Debug.Log("g_PulseBusy now false") end, nil, c_TriggerUnlockDelaySeconds)
 end
 
 function SetIconScale(value)
@@ -688,7 +659,7 @@ end
 function VersionCheck(quiet)
     quiet = quiet or false
     local queryArgs = {
-        url = VERSION_CHECK_URL,
+        url = c_VersionCheckUrl,
         cb = function(args, err)
             if err then 
                 Debug.Warn(err)
@@ -696,10 +667,10 @@ function VersionCheck(quiet)
             else 
                 Debug.Table("VersionCheck HTTPRequest callback args", args)
                 if args[1] then
-                    if _unicode_starts(args[1].name, "v") and args[1].name ~= "v"..AddonInfo.version then
-                        Output("A newer version is available! You have v" .. AddonInfo.version .. " and the latest is " .. args[1].name)
+                    if _unicode_starts(args[1].name, "v") and args[1].name ~= "v"..c_AddonInfo.version then
+                        Output("A newer version is available! You have v" .. c_AddonInfo.version .. " and the latest is " .. args[1].name)
                     elseif not quiet then
-                        Output("Addon is up to date. You have v" .. AddonInfo.version .. "")
+                        Output("Addon is up to date. You have v" .. c_AddonInfo.version .. "")
                     end
                 end
             end
@@ -715,7 +686,7 @@ end
 
 function Output(text)
     local args = {
-        text = OUTPUT_PREFIX .. tostring(text),
+        text = c_OutputPrefix .. tostring(text),
     }
 
     ChatLib.SystemMessage(args);
